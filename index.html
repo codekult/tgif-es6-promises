@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>ES6 Promises</title>
+    <meta content="ES6 Promises. JS async programming through Promises" name=
+    "description">
+    <meta content="Diego Calderón" name="author">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="black-translucent" name=
+    "apple-mobile-web-app-status-bar-style">
+    <meta content=
+    "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui"
+    name="viewport">
+    <link href="css/reveal.css" rel="stylesheet">
+    <link href="css/theme/codecultist.css" id="theme" rel="stylesheet">
+    <link href="css/custom.css" id="theme" rel="stylesheet">
+    <!-- Code syntax highlighting -->
+    <link href="lib/css/hybrid.css" rel="stylesheet">
+    <!-- Printing and PDF exports -->
+
+    <script>
+var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+            document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script><!--[if lt IE 9]>
+        <script src="lib/js/html5shiv.js"></script>
+        <![endif]-->
+</head>
+
+<body>
+    <div class="reveal">
+        <!-- Any section element inside of this container is displayed as a slide -->
+
+        <div class="slides">
+            <section>
+                <h1>ES6 Promises</h1>
+
+                <h2>Async programming with Promises</h2>
+
+                <p><small>by Diego Calderón / <a href=
+                "http://twitter.com/codekult" target=
+                "_blank">@codekult</a></small></p>
+            </section>
+
+            <section>
+                <section>
+                    <h2>How Async Works in JS</h2>
+                </section>
+
+                <section>
+                    <p>&ldquo;Many developers are excited by the promise of
+                    better async patterns. But it's impossible to effectivily
+                    use any abstraction if you don't understand what it's
+                    abstracting, and why&rdquo;</p>
+
+                    <p><a href="https://twitter.com/getify" target=
+                    "_blank"><small>@getify</small></a></p>
+                </section>
+
+                <section>
+                    <h3>The Event Loop and Concurrency</h3>
+                </section>
+
+                <section>
+                    <p>It seems that in JS we can do many things at the same
+                    time, make a request, set event listeners or cycle through
+                    a loop.</p>
+
+                    <p>But really the JS engine is single threaded, an have
+                    what is called a <em>run-to-completion</em> behavior.</p>
+                </section>
+
+                <section data-background="#ffffff">
+                    <img src="images/event_loop.png">
+                </section>
+
+                <section>
+                    <h4>To see it in action:</h4>
+
+                    <p><a href="http://latentflip.com/loupe/" target=
+                    "_blank">loupe - An Event Loop visualisation tool</a></p>
+                </section>
+
+                <section>
+                    <p>It's often necessary to do some form of interaction
+                    coordination between these concurrent "processes", to
+                    prevent race conditions or to prevent blocking the event
+                    loop.</p>
+
+                    <p>Also don't forget that this single thread is shared with
+                    the browser's tasks, as repainting, updating styles and
+                    handling user interaction.</p>
+                </section>
+
+                <section>
+                    <h3>Callbacks</h3>
+                </section>
+
+                <section>
+                    All we know callbacks:
+                    <pre>
+<code>element.addEventListener('click', function () {
+    // Do something when click
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>They are the most fundamental async pattern in the
+                    language, and work in a manner called <em>Continuation
+                    Passing Style:</em></p>
+                    <pre>
+<code>element.addEventListener('click', function () {
+    setTimeOut(function () {
+        ajax('/url', function (response) {
+            console.log(response);
+        });
+    }, 500);
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>It seems pretty straightforward, but:</p>
+                    <pre>
+<code>console.log('A');
+element.addEventListener('click', function () {
+    console.log('B');
+    setTimeOut(function () {
+        ajax('/url', function (response) {
+            console.log(response);
+        });
+        console.log('C');
+    }, 500);
+    console.log('D');
+});
+console.log('E');
+
+// A, E, B, D, C, response</code>
+</pre>
+                </section>
+
+                <section>
+                    <h3>Callback Hell</h3>
+                </section>
+
+                <section data-background="images/hell.gif">
+                    <img class="fragment" src="images/callback_hell.png" style=
+                    "opacity:0.95;">
+                </section>
+
+                <section>
+                    <p>Other callback withdraws:</p>
+
+                    <ul>
+                        <li>Inversion of control.</li>
+
+                        <li>Lack of sequentiality.</li>
+
+                        <li>Lack of trustability.</li>
+
+                        <li>Messy functions signature (input and output are
+                        mixed).</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>So… wrapping up</h3>
+                </section>
+
+                <section>
+                    <p>Callbacks are the fundamental unit of asynchrony in JS,
+                    and the same as CPS or the different concurrency management
+                    patterns, they're very useful.</p>
+
+                    <p>But they're not enough for the evolving landscape of
+                    async programming as JS matures.</p>
+                </section>
+            </section>
+
+            <section data-background="images/promises.jpg"></section>
+
+            <section>
+                <section>
+                    <h2>Promises Pattern</h2>
+                </section>
+
+                <section>
+                    <h3>What are Promises?</h3>
+                </section>
+
+                <section>
+                    <p>Promises are a software abstraction that represent (or
+                    are the placeholder for) the eventual result of an
+                    asynchronous operation.</p>
+                </section>
+
+                <section>
+                    <h3>Why They're Helpful?</h3>
+                </section>
+
+                <section>
+                    <ul>
+                        <li>DOM APIs are relying on promises (ServiceWorker,
+                        fectch API, Streams).</li>
+
+                        <li style="list-style: none"><br></li>
+
+                        <li>Compared to events, doesn't matter when you
+                        observe/register the promise.</li>
+
+                        <li style="list-style: none"><br></li>
+
+                        <li>Are better than callbacks in:<br>
+                        * Chaining/sequentiality.<br>
+                        * Error handling.<br>
+                        * Cleaner function signature</li>
+
+                        <li style="list-style: none"><br></li>
+
+                        <li>More elegant code:<br>
+                            <a href=
+                            "https://gist.github.com/jakearchibald/0e652d95c07442f205ce"
+                            target="_blank">Comparative example</a>
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Promises A+ Spec</h3>
+                </section>
+
+                <section>
+                    &ldquo;An open standard for sound, interoperable JavaScript
+                    promises—by implementers, for implementers.&rdquo;
+
+                    <p><small><a href="https://promisesaplus.com/" target=
+                    "_blank">https://promisesaplus.com/</a></small></p>
+                </section>
+
+                <section>
+                    <h4>Some terminology</h4>
+
+                    <p></p>
+
+                    <ul>
+                        <li><em>promise</em> - Is an object or function with a
+                        <code>then</code> method whose behavior conforms to
+                        this specification.</li>
+
+                        <li><em>thenable</em> - Is an object or function that
+                        defines a then method.</li>
+
+                        <li><em>value</em> - Is any legal JS value, including
+                        <code>undefined</code>, a thenable, or a promise.</li>
+
+                        <li><em>reason</em> - Is a value that indicates why a
+                        promise was rejected.</li>
+                    </ul>
+
+                    <p></p>
+                </section>
+
+                <section>
+                    <h4>Promise states</h4>
+
+                    <p></p>
+
+                    <ul>
+                        <li><em>fulfilled</em> - The action relating to the
+                        promise succeeded.</li>
+
+                        <li><em>rejected</em> - The action relating to the
+                        promise failed.</li>
+
+                        <li><em>pending</em> - Hasn't fulfilled or rejected
+                        yet.</li>
+
+                        <li><em>settled</em> - Has fulfilled or rejected.</li>
+                    </ul>
+
+                    <p></p>
+                </section>
+
+                <section>
+                    <h4>The <code>then</code> method</h4>
+
+                    <p>It's at the core of the specification and provides a
+                    shared common base to all implementations.</p>
+
+                    <p>Also allows Promises/A+ implementations to "assimilate"
+                    nonconformant implementations with reasonable then
+                    methods.</p>
+                </section>
+
+                <section>
+                    <h3>Promises Libraries</h3>
+                </section>
+
+                <section>
+                    <img src="images/the_good.png">
+
+                    <h4>The Good</h4>
+
+                    <p><a href="https://github.com/kriskowal/q" target=
+                    "_blank">Q</a> - Complete and Powerful. Used in
+                    <em>Angular.js</em> and written by one of the A+ spec's
+                    author.</p>
+                </section>
+
+                <section>
+                    <img src="images/the_bad.png">
+
+                    <h4>The Bad<br>
+                    …but not so bad</h4>
+
+                    <p><a href="https://github.com/tildeio/rsvp.js" target=
+                    "_blank">rsvp.js</a> - Simple but lightweight. There is a
+                    <a href="https://github.com/jakearchibald/es6-promise"
+                    target="_blank">polyfill</a> based on a subset of this
+                    library.</p>
+                </section>
+
+                <section>
+                    <img src="images/the_ugly.png">
+
+                    <h4>The Ugly</h4>
+
+                    <p><a href=
+                    "http://api.jquery.com/category/deferred-object/" target=
+                    "_blank">jQuery</a> - A+ non-conformant.</p>
+                </section>
+
+                <section>
+                    <h4>And many more:</h4>
+
+                    <p><a href="https://promisesaplus.com/implementations"
+                    target="_blank">A+ Conformant Implementations</a></p>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>Promises in ES6</h2>
+                </section>
+
+                <section>
+                    <h3>The API</h3>
+                </section>
+
+                <section>
+                    <h4>Browser support</h4><a href=
+                    "http://caniuse.com/#search=promises"><img src=
+                    "images/caniuse_support.png">
+                    <small>http://caniuse.com/#search=promises</small></a>
+                </section>
+
+                <section>
+                    <p><em>Node.js</em> and <em>io.js</em> have full
+                    support.</p><a href=
+                    "http://kangax.github.io/compat-table/es6/"><img src=
+                    "images/es6_support.png">
+                    <small>http://kangax.github.io/compat-table/es6/</small></a>
+                </section>
+
+                <section>
+                    <h4>Create a promise:</h4>
+                    <pre>
+<code>var myPromise = new Promise(function (resolve, reject) {
+    // Do a thing, possibly async, then…
+    if (/* success */) {
+        resolve(value);
+    } else {
+        reject(reason); // It's recommended to use an `Error` object as reason.
+    }
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <h4>Consume a promise:</h4>
+                    <pre>
+<code>myPromise.then(
+    function (value) { /* fulfillment */ },
+    function (reason) { /* rejection */ }
+);</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>Promisifying <code>XMLHttpRequest</code></p>
+                    <pre>
+<code>function httpGet(url) {
+    return new Promise(function (resolve, reject) {
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function () {
+            if (this.status === 200) {
+                // Success
+                resolve(this.response);
+            } else {
+                // Something went wrong (404 etc.)
+                reject(new Error(this.statusText));
+            }
+        }
+        request.onerror = function () {
+            reject(new Error(
+                'XMLHttpRequest Error: '+this.statusText));
+        };
+        request.open('GET', url);
+        request.send();
+    });
+}</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>Using it:</p>
+                    <pre>
+<code>httpGet('http://example.com/file.txt').then(function (value) {
+    console.log('Contents: ' + value);
+}, function (reason) {
+    console.error('Something went wrong', reason);
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <h4>Chaining:</h4>
+                    <pre>
+<code>httpGet('story.json').then(function (response) {
+    return JSON.parse(response);
+}).then(function (response) {
+    console.log("Parsed JSON:", response);
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <h4>Chaining <em>thenables</em>:</h4>
+                    <pre>
+<code>httpGet('/getBooksCollection').then(function (response) {
+    httpGet('/getBooksCollection/' + response[0].id);
+}).then(function (bookData) {
+    console.log('First book: ' + bookData.name);
+});</code>
+</pre>
+                </section>
+
+                <section>
+                    <h4>Error handling:</h4>
+
+                    <p>Using rejection callback</p>
+                    <pre>
+<code>httpGet('/url').then(function (response) {
+    // Success
+}, function (err) {// Rejection callback
+    console.error('Error: ', err);
+});
+</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>Using <code>catch</code> clausure:</p>
+                    <pre>
+<code>httpGet('/url').then(function (response) {
+    // Handle response
+}).catch(function () {
+    // Handle error
+});
+</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>It's like:</p>
+                    <pre>
+<code>httpGet('/url').then(function (response) {
+    // Handle response
+}).then(undefined, function () {
+    // Handle error
+});
+</code>
+</pre>
+                </section>
+
+                <section>
+                    <h3>Common Paterns of Use</h3>
+                </section>
+
+                <section data-background="#111">
+                    <img src="images/menem.jpg">
+                </section>
+
+                <section>
+                    <ul>
+                        <li>Promise as a future value.</li>
+
+                        <li>Promise as flow control mechanism.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h4><code>Promise.all</code> "Gate"</h4>
+
+                    <p>All the promises you pass in must fulfill for the
+                    returned promise to fulfill. If fulfilled, returns an array
+                    with all the promises values. If rejected, returns the
+                    first promise rejection reason.</p>
+
+                    <h4><code>Promise.race</code> "Latch"</h4>
+
+                    <p>Only the first promise to resolve (fulfillment or
+                    rejection) "wins". It returns its fulfillment value or
+                    rejection reason.</p>
+                </section>
+
+                <section>
+                    <pre>
+<code>var p1 = Promise.resolve( 42 );
+var p2 = Promise.resolve( "Hello World" );
+var p3 = Promise.reject( "Oops" );
+
+Promise.race( [p1,p2,p3] )
+.then( function(msg){
+    console.log( msg );     // 42
+} );
+
+Promise.all( [p1,p2,p3] )
+.catch( function(err){
+    console.error( err );   // "Oops"
+} );
+
+Promise.all( [p1,p2] )
+.then( function(msgs){
+    console.log( msgs );    // [42,"Hello World"]
+} );
+</code>
+</pre>
+                </section>
+
+                <section>
+                    <p>Also there are anti-patterns:</p>
+
+                    <ul>
+                        <li>Recurrent nested promises.</li>
+
+                        <li>Swallowed errors.</li>
+
+                        <li>Messy chained promises (the revenge of the
+                        <em>callback hell</em>).</li>
+
+                        <li>
+                            <a href=
+                            "http://taoofcode.net/promise-anti-patterns/"
+                            target="_blank">More promise anti-patterns</a>.
+                        </li>
+                    </ul>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>The Next Step: Generators</h2>
+                </section>
+
+                <section>
+                    <p>Generators are a special kind of function that can be
+                    suspended and resumed (with the <code>yield</code>
+                    operator). They are similar to other languages' <a href=
+                    "http://en.wikipedia.org/wiki/Coroutine" target=
+                    "_blank">coroutines</a>, and allow to expressing async flow
+                    control in a sequential, synchronous-looking fashion.</p>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>Takeaways</h2>
+                </section>
+
+                <section>
+                    <p></p>
+
+                    <ul>
+                        <li>Regarding to the event loop, don't make it
+                        wait.</li>
+
+                        <li>JavaScript is single threaded, but we can use
+                        events, callbacks and CPS to deal with this.</li>
+
+                        <li>Promises allows us to create more sophisticated
+                        async patterns.</li>
+
+                        <li>ES6 implements promises according to the
+                        Promises/A+ spec.</li>
+
+                        <li>Some newest DOM APIs are based on the use of
+                        promises.</li>
+
+                        <li>The basic use of promises is easy to aboard, but
+                        they underhood mechanism is sort of complicated.</li>
+
+                        <li>Generators empowers promises, giving us a
+                        sequential-like flow.</li>
+                    </ul>
+
+                    <p></p>
+                </section>
+            </section>
+
+            <section>
+                <h2>Webography</h2>
+
+                <ul>
+                    <li>
+                        <a href=
+                        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop"
+                        target="_blank">Concurrency model and Event Loop</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://blog.carbonfive.com/2013/10/27/the-javascript-event-loop-explained/"
+                        target="_blank">The JavaScript Event Loop:
+                        Explained</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://2014.jsconf.eu/speakers/philip-roberts-what-the-heck-is-the-event-loop-anyway.html"
+                        target="_blank">What the heck is the event loop
+                        anyway?</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://www.html5rocks.com/en/tutorials/es6/promises/?redirect_from_locale=es"
+                        target="_blank">JavaScript Promises: There and back
+                        again</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://www.2ality.com/2014/09/es6-promises-foundations.html"
+                        target="_blank">ECMAScript 6 promises: Foundations</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://www.2ality.com/2014/10/es6-promises-api.html"
+                        target="_blank">ECMAScript 6 promises: The API</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "http://www.2ality.com/2015/03/no-promises.html"
+                        target="_blank">No promises: Async JS with only
+                        generators</a>
+                    </li>
+
+                    <li>
+                        <a href="https://www.youtube.com/watch?v=qbKWsbJ76-s"
+                        target="_blank">Promises and Generators: Control flow
+                        utopia</a>
+                    </li>
+
+                    <li>
+                        <a href=
+                        "https://github.com/getify/You-Dont-Know-JS/blob/master/async%20&%20performance/README.md#you-dont-know-js-async--performance"
+                        target="_blank">YDKJS: Async &amp; Performance</a>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Q&amp;A</h2>
+            </section>
+
+            <section>
+                <img src="images/the_end.gif">
+
+                <h2><span style="font-style: normal;">⬇</span><br>
+                …The End</h2>
+            </section>
+        </div>
+    </div><script src="lib/js/head.min.js"></script> <script src="js/reveal.js"></script> <script>
+
+            // Full list of configuration options available at:
+            // https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                controls: true,
+                progress: true,
+                history: true,
+                center: true,
+
+                transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+                // Optional reveal.js plugins
+                dependencies: [
+                    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                    { src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+                    { src: 'plugin/zoom-js/zoom.js', async: true },
+                    { src: 'plugin/notes/notes.js', async: true }
+                ]
+            });
+
+    </script>
+</body>
+</html>
